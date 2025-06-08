@@ -1,0 +1,11 @@
+[project]
+name = "dantech-ai-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi[standard]>=0.115.12",
+    "langchain-community>=0.3.24",
+    "langchain[google-genai]>=0.3.25",
+]
