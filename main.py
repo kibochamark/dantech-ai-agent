@@ -33,8 +33,10 @@ def get_agent_for_user(user_id):
     if user_id not in user_memory_store:
         user_memory_store[user_id] = ConversationBufferMemory(
             memory_key="chat_history",
+            input_key="input",  # or whatever your input var name is
             return_messages=True
         )
+
 
     memory = user_memory_store[user_id]
 
