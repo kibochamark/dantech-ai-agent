@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 from langchain.chains.llm import LLMChain
 from langchain.chat_models import init_chat_model
 from starlette.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 
 from agent_model import model
 from prompt.prompt import LLM_PROMPT_TEMPLATE_ESCAPED, PRISMA_SCHEMA_FOR_LLM, PYMONGO_OUTPUT_FORMAT_INSTRUCTIONS, \
@@ -82,39 +83,36 @@ class AgentResponse(BaseModel):
 
 import traceback
 
-# @app.post("/ask", response_model=AgentResponse)
-# async def get_answer_from_prompt(prompt: AgentModel):
-#     try:
-#         agent = get_agent_for_user(prompt.kinde_id)
-#         result = agent.invoke({"input": prompt.query})
-#         print(result)
-
-#         return {
-#             "status": "success",
-#             "result": result.get('output')
-#         }
-
-#     except Exception as e:
-#         traceback.print_exc()
-#         return {
-#             "status": "error",
-#             "result": f"Exception occurred: {str(e)}"
-#         }
-
-@app.post("/ask")
+@app.post("/ask", response_model=AgentResponse)
 async def get_answer_from_prompt(prompt: AgentModel):
     try:
         agent = get_agent_for_user(prompt.kinde_id)
+        result = agent.invoke({"input": prompt.query})
+        output = result.get('output', '')
 
-        async def stream_generator() -> AsyncGenerator[str, None]:
-            try:
-                async for event in agent.astream({"input": prompt.query}):  # use `.astream` if your model supports it
-                    token = event.get("output", "")
-                    yield token
-            except Exception as e:
-                yield f"\n[Stream Error]: {str(e)}"
-
-        return StreamingResponse(stream_generator(), media_type="text/plain")
+        return PlainTextResponse(content=output)
 
     except Exception as e:
-        return StreamingResponse(iter([f"[Error]: {str(e)}"]), media_type="text/plain")
+        traceback.print_exc()
+        return {
+            "status": "error",
+            "result": f"Exception occurred: {str(e)}"
+        }
+
+# @app.post("/ask")
+# async def get_answer_from_prompt(prompt: AgentModel):
+#     try:
+#         agent = get_agent_for_user(prompt.kinde_id)
+
+#         async def stream_generator() -> AsyncGenerator[str, None]:
+#             try:
+#                 async for event in agent.astream({"input": prompt.query}):  # use `.astream` if your model supports it
+#                     token = event.get("output", "")
+#                     yield token
+#             except Exception as e:
+#                 yield f"\n[Stream Error]: {str(e)}"
+
+#         return StreamingResponse(stream_generator(), media_type="text/plain")
+
+#     except Exception as e:
+#         return StreamingResponse(iter([f"[Error]: {str(e)}"]), media_type="text/plain")
