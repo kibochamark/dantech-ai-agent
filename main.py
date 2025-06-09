@@ -1,7 +1,7 @@
 # Load environment variables
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from langchain.chains.llm import LLMChain
 from langchain.chat_models import init_chat_model
 from starlette.middleware.cors import CORSMiddleware
@@ -18,6 +18,11 @@ from langchain.memory import ConversationBufferMemory
 
 from tools.main import natural_language_query_executor
 from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from starlette.middleware.cors import CORSMiddleware
+from typing import AsyncGenerator
+import asyncio
 
 load_dotenv()
 
@@ -45,7 +50,7 @@ def get_agent_for_user(user_id):
         llm=model,
         agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         memory=memory,
-        verbose=True
+        verbose=False
     )
 
 
@@ -77,22 +82,39 @@ class AgentResponse(BaseModel):
 
 import traceback
 
-@app.post("/ask", response_model=AgentResponse)
+# @app.post("/ask", response_model=AgentResponse)
+# async def get_answer_from_prompt(prompt: AgentModel):
+#     try:
+#         agent = get_agent_for_user(prompt.kinde_id)
+#         result = agent.invoke({"input": prompt.query})
+#         print(result)
+
+#         return {
+#             "status": "success",
+#             "result": result.get('output')
+#         }
+
+#     except Exception as e:
+#         traceback.print_exc()
+#         return {
+#             "status": "error",
+#             "result": f"Exception occurred: {str(e)}"
+#         }
+
+@app.post("/ask")
 async def get_answer_from_prompt(prompt: AgentModel):
     try:
         agent = get_agent_for_user(prompt.kinde_id)
-        result = agent.invoke({"input": prompt.query})
-        print(result)
 
-        return {
-            "status": "success",
-            "result": result.get('output')
-        }
+        async def stream_generator() -> AsyncGenerator[str, None]:
+            try:
+                async for event in agent.astream({"input": prompt.query}):  # use `.astream` if your model supports it
+                    token = event.get("output", "")
+                    yield token
+            except Exception as e:
+                yield f"\n[Stream Error]: {str(e)}"
+
+        return StreamingResponse(stream_generator(), media_type="text/plain")
 
     except Exception as e:
-        traceback.print_exc()
-        return {
-            "status": "error",
-            "result": f"Exception occurred: {str(e)}"
-        }
-
+        return StreamingResponse(iter([f"[Error]: {str(e)}"]), media_type="text/plain")

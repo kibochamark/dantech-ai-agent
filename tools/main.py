@@ -39,7 +39,8 @@ def natural_language_to_pymongo(user_query: str) -> str:
     "last_7_days_start":None,
     "now":None,
     "YYYY-MM-DD_start":None,
-    "YYYY-MM-DD_end":None                
+    "YYYY-MM-DD_end":None,
+ 
   })
 
   return result

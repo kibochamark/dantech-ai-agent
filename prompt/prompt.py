@@ -493,24 +493,25 @@ LLM_PROMPT_TEMPLATE_ESCAPED = f"""
 # {{yesterday_start}}, {{today_start}}, {{last_month_start}}, {{last_month_end}}, {{last_7_days_start}}, {{now}}
 # For specific dates like "June 6th, 2025", convert the date to ISO format and use:
 # {{YYYY-MM-DD_start}} and {{YYYY-MM-DD_end}}
-# Do NOT create custom placeholders. These will cause failures.
-# Always use the full ISO format (YYYY-MM-DD).
+# 🚫 Do NOT create custom placeholders. These will cause failures.
+# ✅ Always use the full ISO format (YYYY-MM-DD). Do NOT generate or invent placeholder formats.
 
-# ⚠️ IMPORTANT:
-# Step 1: Check if the user query is related to the schema.
-# Step 2: If it is related, respond ONLY with a valid PyMongo JSON query (no extra text or explanation).
-# Step 3: If it is NOT related to the schema, respond with the following JSON error object including the available schema:
+# ⚠️ CRITICAL INSTRUCTIONS:
+# Step 1: Check if the user query is related to the business domain and schema provided.
+# Step 2: If it IS related, respond ONLY with a valid PyMongo JSON query (no extra text or explanation).
+# Step 3: If it is NOT related to the business domain or schema, respond with ONLY the following JSON error object format:
 
 # {{{{
-#   "error": "The query is not related to the available schema. I can only answer questions based on the schema below.",
-#   "available_schema": "<INSERT CURRENTLY AVAILABLE  SUMMARY OF THE TABLES IN THE SCHEMA HERE>"
+#   "error": "The query is not related to the available schema. I am only able to assist with questions related to the business domain and schema below.",
+#   "available_schema": "<INSERT CURRENTLY AVAILABLE SUMMARY OF THE TABLES IN THE SCHEMA HERE>"
 # }}}}
 
 # The schema must be included in the "available_schema" field as a string.
+
+# 🚫 Do not create custom placeholder formats or output anything outside the defined rules.
 
 Now, convert the following natural language query into an executable PyMongo Query.
 User Query: {{user_query}}
 
 PyMongo Query (Only valid JSON or the JSON error object, nothing else):
 """
-
